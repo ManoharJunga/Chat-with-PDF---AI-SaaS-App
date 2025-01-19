@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+const nextConfig = {
+  reactStrictMode: false,
   images: {
     remotePatterns: [
       {
