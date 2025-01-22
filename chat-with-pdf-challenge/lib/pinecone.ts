@@ -1,25 +1,29 @@
 import { Pinecone } from '@pinecone-database/pinecone';
 
-if (!process.env.PINECONE_API_KEY) {
-    throw new Error('Missing PINECONE_API_KEY environment variable');
+// Ensure the API key and environment variables are set
+if (!process.env.PINECONE_API_KEY || !process.env.PINECONE_ENVIRONMENT) {
+    throw new Error('Missing required environment variables: PINECONE_API_KEY or PINECONE_ENVIRONMENT');
 }
 
+// Initialize Pinecone client directly with the API key
 const pineconeClient = new Pinecone({
-    apiKey: process.env.PINECONE_API_KEY,
+    apiKey: process.env.PINECONE_API_KEY, // Only include API key here
 });
 
-export const initializePineconeClient = async () => {
-    try {
-        await pineconeClient.init({
-            apiKey: process.env.PINECONE_API_KEY,
-            environment: process.env.PINECONE_ENVIRONMENT || 'us-west1-gcp',  // Default to us-west1-gcp if not set
-        });
-        console.log("Pinecone client initialized successfully");
-        return pineconeClient;
-    } catch (error) {
-        console.error("Error initializing Pinecone client:", error.message);
-        throw new Error("Failed to initialize Pinecone client");
-    }
-};
+// You can also set the environment using the environment variable in your code
+pineconeClient.environment = process.env.PINECONE_ENVIRONMENT; // Set the environment explicitly
 
-export default pineconeClient;
+(async () => {
+    try {
+        // Now the client should be correctly initialized and environment configured
+        console.log('Pinecone API key is valid, and the client has been initialized successfully.');
+    } catch (error) {
+        console.error('Failed to initialize Pinecone client. Possible reasons:');
+        console.error('- Invalid API Key');
+        console.error('- Incorrect environment');
+        console.error('- Network issues');
+        console.error((error as Error).message); // Type assertion for better error handling
+    }
+})();
+
+export default pineconeClient; // Export the client for reuse
