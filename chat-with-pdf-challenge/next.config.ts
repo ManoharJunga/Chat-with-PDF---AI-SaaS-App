@@ -1,12 +1,14 @@
-import type { NextConfig } from "next";
-
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false,
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'i.imgur.com',
+        hostname: 'i.imgur.com', // Existing hostname
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.clerk.com', // Add this line
       },
     ],
   },

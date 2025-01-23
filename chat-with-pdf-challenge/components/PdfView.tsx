@@ -49,16 +49,18 @@ function PdfView({ url }: { url: string }) {
                     <p className="flex items-center justify-center">
                         {pageNumber} of {numPages}
                     </p>
-                    <Button variant="outline"
-                        disabled={pageNumber === 1}
+                    <Button
+                        variant="outline"
+                        disabled={pageNumber === numPages} // Disable if on the last page
                         onClick={() => {
-                            if (pageNumber > 1) {
+                            if (pageNumber < (numPages || 1)) { // Check if there are pages left
                                 setPageNumber(pageNumber + 1);
                             }
                         }}
                     >
                         Next
                     </Button>
+
                     <Button variant="outline" onClick={() => setRotation((rotation + 90) % 360)}>
                         <RotateCw />
                     </Button>
