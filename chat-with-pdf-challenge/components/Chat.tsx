@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "./ui/button";
@@ -36,7 +36,7 @@ function Chat({ id }: { id: string }) {
     useEffect(() => {
         bottomOfChatRef.current?.scrollIntoView({
             behavior: "smooth",
-        })
+        });
     }, [messages]);
 
     useEffect(() => {
@@ -44,23 +44,18 @@ function Chat({ id }: { id: string }) {
 
         console.log("Updated snapshot", snapshot.docs);
 
-        const lastMessage = messages.pop();
-        if (lastMessage?.role === "ai" && lastMessage.message === "Thinking...") {
-            return;
-        }
-
-        const newMessages = snapshot.docs.map(doc => {
+        // Create new messages from snapshot data
+        const newMessages = snapshot.docs.map((doc) => {
             const { role, message, createdAt } = doc.data();
-
             return {
                 id: doc.id,
                 role,
                 message,
                 createdAt: createdAt.toDate(),
             };
-            setMessages(newMessages);
         });
 
+        setMessages(newMessages);
     }, [snapshot]);
 
     const handleSubmit = async (e: FormEvent) => {
@@ -69,6 +64,7 @@ function Chat({ id }: { id: string }) {
 
         setInput("");
 
+        // Add user message to the messages state
         setMessages((prev) => [
             ...prev,
             {
@@ -80,23 +76,36 @@ function Chat({ id }: { id: string }) {
                 role: "ai",
                 message: "Thinking...",
                 createdAt: new Date(),
-            }
+            },
         ]);
 
         startTransition(async () => {
-            const { sucess, message } = await askQuestion(id, q);
-            if (!sucess) {
+            const { success, message } = await askQuestion(id, q);
+
+            if (!success) {
                 setMessages((prev) =>
                     prev.slice(0, prev.length - 1).concat([
                         {
                             role: "ai",
-                            message: `Woops...${message}`,
+                            message: `Oops...${message}`,
                             createdAt: new Date(),
-                        }
+                        },
                     ])
-                )
+                );
+            } else {
+                // Assuming that the answer is coming back in the reply and should be displayed
+                const aiAnswer = message || "No answer generated.";
+                setMessages((prev) =>
+                    prev.slice(0, prev.length - 1).concat([
+                        {
+                            role: "ai",
+                            message: aiAnswer,
+                            createdAt: new Date(),
+                        },
+                    ])
+                );
             }
-        })
+        });
     };
 
     return (
@@ -130,8 +139,6 @@ function Chat({ id }: { id: string }) {
                     </div>
                 )}
             </div>
-
-
 
             {/* Input Form Section */}
             <form

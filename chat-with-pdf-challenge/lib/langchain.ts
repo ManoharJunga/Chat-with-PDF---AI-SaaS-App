@@ -3,7 +3,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
 import { PineconeStore } from "@langchain/pinecone";
-
+import axios from "axios";
 import { createRetrievalChain } from "langchain/chains/retrieval"
 import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
 import { ChatPromptTemplate } from "@langchain/core/prompts"
@@ -21,11 +21,11 @@ export const indexName = "chatwithpdf";
 
 const model = new HuggingFaceInference({
     apiKey: process.env.HUGGINGFACE_API_KEY,
-    model: "deepset/roberta-base-squad2", // For the GPT-2 model
-    temperature: 0, // Adjust temperature as needed
-    maxTokens: 1000, // Adjust based on the model's token limit
-    // // You can replace this with GPT-3 or any other language model available
-});
+    model: "deepset/roberta-base-squad2",
+    temperature: 0,
+    maxTokens: 1000,
+  });
+  
 
 
 async function fetchMessagesFromDB(docId: string) {
@@ -188,121 +188,53 @@ export async function generateEmbeddingsInPineconeVectorStore(docId: string) {
         }
     }
 }
-
 const generateLangchainCompletion = async (docId: string, question: string) => {
-    console.log("--- Starting generateLangchainCompletion ---");
-    console.log(`Doc ID: ${docId}`);
-    console.log(`Question: ${question}`);
-
-    // Step 1: Generate Pinecone Vector Store
-    let pineconeVectorStore;
     try {
-        pineconeVectorStore = await generateEmbeddingsInPineconeVectorStore(docId);
-        console.log(`--- Pinecone Vector Store Generated Successfully ---`);
-    } catch (error) {
-        console.error(`Error generating Pinecone vector store:`, error);
-        throw error;
-    }
+      console.log("=== Starting LangChain Completion ===");
 
-    if (!pineconeVectorStore) {
-        console.error(`Pinecone vector store not found.`);
-        throw new Error("Pinecone vector store not found");
-    }
+      if (!docId || !question) {
+        throw new Error("Both 'docId' and 'question' are required.");
+      }
 
-    // Step 2: Create a retriever
-    console.log("--- Creating a retriever... ---");
-    const retriever = pineconeVectorStore.asRetriever();
-    console.log(`Retriever created successfully:`, retriever);
+      // Generate Pinecone Vector Store (Assuming you have this function)
+      const pineconeVectorStore = await generateEmbeddingsInPineconeVectorStore(docId);
+      if (!pineconeVectorStore) throw new Error("Failed to generate Pinecone vector store.");
 
-    // Step 3: Fetch relevant context from the Pinecone Vector Store
-    let context;
-    try {
-        // Use getRelevantDocuments to fetch context based on the question
-        context = await retriever.getRelevantDocuments(question);
-        console.log("--- Context fetched successfully ---");
-        console.log(`Context: ${JSON.stringify(context, null, 2)}`);
-    } catch (error) {
-        console.error(`Error fetching context from Pinecone Vector Store:`, error);
-        throw error;
-    }
+      const retriever = pineconeVectorStore.asRetriever();
+      const contextDocs = await retriever.getRelevantDocuments(question);
+      const extractedContext = contextDocs.map((doc) => doc.pageContent).join("\n");
 
-    // Step 4: Define a prompt template for answering questions with context
-    console.log("--- Defining a prompt template for answering questions... ---");
-    const historyAwareRetrievalPrompt = ChatPromptTemplate.fromMessages([
-        ["system", "Answer the user's questions based on the below context: \n\n{context}"],
-        ["user", "{input}"],
-    ]);
-    console.log(`History-aware retrieval prompt created: ${JSON.stringify(historyAwareRetrievalPrompt, null, 2)}`);
-
-    // Step 5: Create the document combining chain
-    let historyAwareCombineDocsChain;
-    try {
-        historyAwareCombineDocsChain = await createStuffDocumentsChain({
-            llm: model,
-            prompt: historyAwareRetrievalPrompt,
-        });
-        console.log("--- Document combining chain created successfully ---");
-    } catch (error) {
-        console.error(`Error creating document combining chain:`, error);
-        throw error;
-    }
-
-    // Step 6: Create the main conversational retrieval chain
-    console.log("--- Creating the main retrieval chain... ---");
-    let conversationalRetrievalChain;
-    try {
-        conversationalRetrievalChain = await createRetrievalChain({
-            retriever: retriever,
-            combineDocsChain: historyAwareCombineDocsChain,
-        });
-        console.log("--- Conversational retrieval chain created successfully ---");
-    } catch (error) {
-        console.error(`Error creating conversational retrieval chain:`, error);
-        throw error;
-    }
-
-    // Step 7: Run the chain with the provided question and context
-    console.log("--- Running the chain with the question and context... ---");
-    console.log(question, context);
-
-    // Step 7: Run the chain with the provided question and context
-    console.log("--- Running the chain with the question and context... ---");
-    console.log(question, context);
-
-    // Extract the pageContent from each document in the context
-    const extractedContext = context.map(doc => doc.pageContent).join("\n");
-
-    let reply;
-    try {
-        // Ensure inputs are structured properly
-        const inputs = {
-            input: question,  // Directly include `input`
-            context: extractedContext,  // Directly include `context`
-            chat_history: [], // Optional, you can provide chat history here if needed
-        };
-
-        // Pass the inputs correctly structured to the chain
-        reply = await conversationalRetrievalChain.invoke(inputs);
-
-        console.log("--- Chain execution completed successfully ---");
-        console.log(`Reply: ${JSON.stringify(reply, null, 2)}`);
-    } catch (error) {
-        console.error(`Error running the conversational retrieval chain:`, error);
-        throw error;
-    }
-
-    if (!reply || typeof reply.answer !== "string") {
-        console.error("Invalid reply structure.");
-        throw new Error("The reply does not contain a valid answer.");
-    }
-
-    console.log(`--- Final Answer: ${reply.answer} ---`);
-    return {
-        context: extractedContext,  // Include the extracted context in the response
+      // Prepare Payload with context and question for Hugging Face API
+      const payload = {
+        context: extractedContext,
         question: question,
-        answer: reply.answer,
-    };
+      };
 
+      console.log("Payload to Hugging Face API:", JSON.stringify(payload, null, 2));
+
+      // Call Hugging Face API
+      const response = await axios.post(
+        `https://api-inference.huggingface.co/models/${model.model}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${model.apiKey}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.data.answer) throw new Error("Invalid or missing 'answer' in API response.");
+
+      // Log the answer from Hugging Face API
+      console.log("Answer from Hugging Face:", response.data.answer);
+
+      console.log("=== Completion Successful ===");
+      return { context: extractedContext, question, answer: response.data.answer };
+    } catch (error) {
+      console.error("Error during LangChain completion:", error);
+      throw error;
+    }
 };
 
 export { model, generateLangchainCompletion };

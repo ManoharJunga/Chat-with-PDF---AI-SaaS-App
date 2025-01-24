@@ -46,15 +46,21 @@ export async function askQuestion(id: string, question: string) {
         // Generate a reply from Langchain
         const reply = await generateLangchainCompletion(id, question);
 
+        // Extract the answer from the reply
+        const answer = reply?.answer || "Sorry, I couldn't generate an answer.";
+
+        // Log the answer to check if it's correctly fetched
+        console.log("Answer generated:", answer);
+
         // Add the AI's reply to Firestore
         const aiMessage: Message = {
             role: "ai",
-            message: reply,
+            message: answer,
             createdAt: new Date(),
         };
         await chatRef.add(aiMessage);
 
-        return { success: true, message: null };
+        return { success: true, message: answer }; // Return the AI-generated answer here
     } catch (error) {
         console.error("Error in askQuestion:", error);
         return { success: false, message: "An error occurred while processing the request" };
