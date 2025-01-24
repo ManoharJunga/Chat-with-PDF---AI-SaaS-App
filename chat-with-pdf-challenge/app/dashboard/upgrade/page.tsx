@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button"
 import { CheckIcon } from "lucide-react"
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import useSubscription from "@/hooks/useSubscription";
 
 function PricingPage() {
     const {user} = useUser();
     const router = useRouter();
+    const {hasActiveMembership, loading} = useSubscription();
     return (
         <div className="py-24 sm:py-32">
             <div className="max-w-4xl mx-auto text-center">

@@ -2,22 +2,23 @@ import { Button } from "@/components/ui/button";
 import { BrainCogIcon, EyeIcon, GlobeIcon, MonitorSmartphoneIcon, ServerCogIcon, ZapIcon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-
+import { SignInButton } from "@clerk/nextjs"; // Import Clerk's SignInButton
 
 const features = [
   {
     name: "Store your PDF Documents",
-    description: "Keep all your important PDF files securely stored andeasily accessible anytime, anywhere.",
-    icon: GlobeIcon
-  }, {
+    description: "Keep all your important PDF files securely stored and easily accessible anytime, anywhere.",
+    icon: GlobeIcon,
+  },
+  {
     name: "Blazing Fast Responses",
     description: "Experience lightning-fast answers to your queries, ensuring you get the information you need instantly.",
     icon: ZapIcon,
-  }, {
+  },
+  {
     name: "Chat Memorisation",
     description: "Our intelligent chatbot remembers previous interactions, providing a seamless and personalized experience.",
     icon: BrainCogIcon,
-
   },
   {
     name: "Interactive PDF Viewer",
@@ -33,11 +34,21 @@ const features = [
     name: "Responsive Across Devices",
     description: "Access and chat with your PDFs seamlessly on any device, whether it's your desktop, tablet, or smartphone.",
     icon: MonitorSmartphoneIcon,
-  }
-]
+  },
+];
+
 export default function Home() {
   return (
-    <main className=" flex-1 overflow-scroll p-2 lg:p-5 bg-gradient-to-bl from-white to-indigo-600">
+    <main className="relative flex-1 overflow-scroll p-2 lg:p-5 bg-gradient-to-bl from-white to-indigo-600">
+      {/* Sign-In Button at Top-Right */}
+      <div className="absolute top-10 right-10 z-10">
+        <SignInButton mode="modal">
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg">
+            Sign In
+          </Button>
+        </SignInButton>
+      </div>
+
       <div className="bg-white py-24 sm:py-32 rounded-md drop-shadow-xl">
         <div className="flex flex-col justify-center items-center mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl sm:text-center">
@@ -57,10 +68,11 @@ export default function Home() {
             </p>
           </div>
 
-            <Button asChild className="mt-10">
-              <Link href="/dashboard">Get Started</Link>
-            </Button>
+          <Button asChild className="mt-10">
+            <Link href="/dashboard">Get Started</Link>
+          </Button>
         </div>
+
         <div className="relative overflow-hidden pt-16">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <Image
@@ -75,6 +87,7 @@ export default function Home() {
             </div>
           </div>
         </div>
+
         <div className="mx-auto mt-16 max-w-7xl px-6 sm:mt-20 md:mt-24 lg:px-8">
           <dl className="mx-auto grid max-w-2xl grid-cols-1 gap-x-6 gap-y-10 text-base leading-7 text-gray-600 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:grid-cols-3 lg:gap-x-8 lg:gap-y-16">
             {features.map((feature) => (
@@ -90,7 +103,6 @@ export default function Home() {
             ))}
           </dl>
         </div>
-
       </div>
     </main>
   );

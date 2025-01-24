@@ -4,15 +4,19 @@ import { adminDb } from "@/firebaseAdmin";
 import { auth } from "@clerk/nextjs/server";
 
 async function ChatToFilePage({
-  params: { id },
+  params,
 }: {
   params: {
     id: string;
   };
 }) {
-  auth();
+  // Await params if necessary
+  const { id } = await params;
+
+  // Authenticate the user
   const { userId } = await auth();
 
+  // Fetch file data from Firestore
   const ref = await adminDb
     .collection("users")
     .doc(userId!)
