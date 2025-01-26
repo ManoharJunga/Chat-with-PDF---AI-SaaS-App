@@ -11,7 +11,6 @@ const pineconeClient = new Pinecone({
 });
 
 // You can also set the environment using the environment variable in your code
-pineconeClient.environment = process.env.PINECONE_ENVIRONMENT; // Set the environment explicitly
 
 (async () => {
     try {
